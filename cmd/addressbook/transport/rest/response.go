@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"address-book/pkg/storage"
 	"encoding/json"
 	"errors"
+	"infoblox-golang/internal/platform/storage"
 	"net/http"
 )
 

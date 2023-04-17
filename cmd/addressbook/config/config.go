@@ -13,18 +13,19 @@ type DbConfig struct {
 }
 
 type ServerConfig struct {
-	Port int `mapstructure:"port"`
+	HttpServerPort        int `mapstructure:"HttpServerPort"`
+	GrpcServerPort        int `mapstructure:"GrpcServerPort"`
+	GrpcGatewayServerPort int `mapstructure:"GrpcGatewayServerPort"`
 }
 
 // ReadConfig reads config values from json config file
-func ReadConfig() (Config, error) {
+func Read() (Config, error) {
 	vp := viper.New()
 	config := Config{}
 
 	vp.SetConfigName("config")
 	vp.SetConfigType("json")
 	vp.AddConfigPath("./config")
-	//vp.AddConfigPath(".")
 
 	err := vp.ReadInConfig()
 	if err != nil {

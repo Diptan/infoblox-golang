@@ -1,8 +1,8 @@
 package addressbook
 
 import (
-	"address-book/pkg/storage"
 	"fmt"
+	"infoblox-golang/internal/platform/storage"
 )
 
 type Store interface {
@@ -33,14 +33,14 @@ func NewRepository(db Store) Repository {
 }
 
 // Create creates a new user entity
-func (r Repository) Create(d User) (User, error) {
-	d.ID = storage.NewID()
+func (r Repository) Create(u User) (User, error) {
+	u.ID = storage.NewID()
 
-	if err := r.db.Insert(d); err != nil {
-		return User{}, fmt.Errorf("save user: %w", err)
+	if err := r.db.Insert(u); err != nil {
+		return u, fmt.Errorf("save user: %w", err)
 	}
 
-	return d, nil
+	return u, nil
 }
 
 // Remove removes an existing user entity by id

@@ -1,12 +1,14 @@
 package rest
 
 import (
-	"address-book/internal/addressbook"
-	"address-book/pkg/jsonapi"
+	"infoblox-golang/internal/addressbook"
+	"infoblox-golang/internal/platform/jsonapi"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )
+
+//This code was implemented for education purposes
 
 // Controller is a type that provides user handlers
 type Controller struct {
@@ -27,7 +29,7 @@ func (c *Controller) RegisterHandlers() http.Handler {
 
 	router.HandlerFunc(http.MethodGet, "/v1/users", c.GetAllUsers)
 	router.HandlerFunc(http.MethodGet, "/v1/user/:id", c.GetUserById)
-	router.HandlerFunc(http.MethodPost, "/v1/user", c.AddUser)
+	router.HandlerFunc(http.MethodPost, "/v1/user", c.CreateUser)
 
 	router.HandlerFunc(http.MethodDelete, "/v1/user/:id", c.DeleteUser)
 	router.HandlerFunc(http.MethodPut, "/v1/user/:id", c.UpdateUser)
@@ -57,14 +59,7 @@ func (c *Controller) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	jsonapi.Write(w, u)
 }
 
-// type UserPayload struct {
-// 	ID       string `json:"id"`
-// 	Username string `json:"username"`
-// 	Address  string `json:"address"`
-// 	Phone    string `json:"phone"`
-// }
-
-func (c *Controller) AddUser(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user addressbook.User
 
 	if err := jsonapi.Read(r, &user); err != nil {
@@ -72,13 +67,13 @@ func (c *Controller) AddUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := c.srv.AddUser(user)
+	u, err := c.srv.AddUser(user)
 	if err != nil {
 		c.handleError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	jsonapi.Write(w, u)
 }
 
 func (c *Controller) DeleteUser(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +106,7 @@ func (c *Controller) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) handleError(w http.ResponseWriter, err error) {
 	if status := toStatus(err); status != http.StatusOK {
-		//c.log.Warnf("request has failed with error: %s", err)
+		//TODO Log error: "request has failed with error: %s", err)
 
 		w.WriteHeader(status)
 		jsonapi.Write(w, jsonapi.ErrorResponse{Errors: []string{err.Error()}})

@@ -1,0 +1,11 @@
+{
+    "server": {
+        "HttpServerPort": 8090,
+        "GrpcServerPort": 9090,
+        "GrpcGatewayServerPort": 9091
+    },
+
+    "db": {
+        "address": ""
+    }
+}

@@ -1,5 +1,10 @@
 package addressbook
 
+import "errors"
+
+// ErrBadRequestID is an error when request ID is malformed
+var ErrBadRequest = errors.New("user ID cannot be empty")
+
 // Service is a type that provides main addressbook operations
 type Service struct {
 	repository Repository
@@ -18,6 +23,9 @@ func (s *Service) AddUser(user User) (User, error) {
 }
 
 func (s *Service) GetUserById(id string) (User, error) {
+	if id == "" {
+		return User{}, ErrBadRequest
+	}
 	return s.repository.GetById(id)
 }
 
