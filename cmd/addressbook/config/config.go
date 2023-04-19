@@ -4,7 +4,7 @@ import "github.com/spf13/viper"
 
 // Config contains server configuration
 type Config struct {
-	Db     DbConfig     `mapstructure:"address"`
+	Db     DbConfig     `mapstructure:"db"`
 	Server ServerConfig `mapstructure:"server"`
 }
 

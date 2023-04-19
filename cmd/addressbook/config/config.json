@@ -6,6 +6,6 @@
     },
 
     "db": {
-        "address": ""
+        "address": "postgres://postgres:postgrespw@localhost:32768/address-book"
     }
 }
