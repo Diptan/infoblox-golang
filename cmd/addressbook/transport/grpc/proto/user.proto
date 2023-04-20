@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/empty.proto";
+import "google/api/annotations.proto";
+
+option go_package = "address-book/pb";
+
+message User {
+    string id = 1;
+    string username = 2;
+    string address = 3;
+    string phone = 4;
+}
+
+message SearchUserRequest{
+    string field = 1;
+    string value = 2;
+}
+
+message Users {
+    repeated User users = 1;
+}
+
+message UserId {
+    string id = 1;
+  }
+
+message DeleteUserResponse {
+    bool success = 1;
+}
+
+service AddressBook {
+    rpc CreateUser(User) returns (User) {
+        option (google.api.http) = {
+            post: "/v1/user"
+            body: "*"
+        };
+    }
+
+    rpc UpdateUser(User) returns (User) {
+        option (google.api.http) = {
+            put: "/v1/user/{id}"
+            body: "*"
+        };
+    }
+
+    rpc DeleteUser(UserId) returns (DeleteUserResponse) {
+        option (google.api.http) = {
+            delete: "/v1/user/{id}"
+        };
+    }
+    
+    rpc GetAll(google.protobuf.Empty) returns (Users) {
+        option (google.api.http) = {
+            get: "/v1/users"
+          };
+    }
+
+    rpc SearchUser(SearchUserRequest) returns (Users) {
+        option (google.api.http) = {
+          get: "/v1/users/{field}/{value}"
+        };
+    }   
+}
+
