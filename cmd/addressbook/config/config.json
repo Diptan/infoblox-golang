@@ -1,11 +1,9 @@
 {
     "server": {
-        "HttpServerPort": 8090,
-        "GrpcServerPort": 9090,
-        "GrpcGatewayServerPort": 9091
+        "GatewayAddr": 8080
     },
 
     "db": {
-        "address": "postgres://postgres:postgrespw@localhost:32768/address-book"
+        "host": "postgres://postgres:postgrespw@localhost:5432/address-book"
     }
 }

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,7 +28,7 @@ func main() {
 	defer cancel()
 
 	// Setup persistence layer
-	gorm := connectToDB(cfg.Db.Address)
+	gorm := connectToDB(cfg.Db.Host)
 	gorm.WithContext(ctx)
 
 	// Setup services
@@ -38,8 +39,8 @@ func main() {
 
 	grpcSrv := grpc.NewServer(service)
 	go func() {
-		log.Println("Starting grpc gateway on port", cfg.Server.GrpcGatewayServerPort)
-		if err := grpcSrv.RunGatewayServer(ctx, cfg.Server.GrpcGatewayServerPort); err != nil {
+		log.Println("Starting grpc gateway on port", cfg.Server.GatewayAddr)
+		if err := grpcSrv.RunGatewayServer(ctx, cfg.Server.GatewayAddr); err != nil {
 			panic(err)
 		}
 	}()
@@ -50,15 +51,38 @@ func main() {
 	<-quit
 }
 
-func connectToDB(dbURL string) *gorm.DB {
+var counts int64
+
+func openDb(dbURL string) (*gorm.DB, error) {
 	log.Println("Connecting to db")
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
-
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 
 	db.AutoMigrate(&addressbook.User{})
 
-	return db
+	return db, nil
+}
+
+func connectToDB(dbURL string) *gorm.DB {
+	for {
+		connection, err := openDb(dbURL)
+		if err != nil {
+			log.Println("Postgres not yet ready ...")
+			counts++
+		} else {
+			log.Println("Connected to Postgres!")
+			return connection
+		}
+
+		if counts > 10 {
+			log.Println(err)
+			return nil
+		}
+
+		log.Println("Backing off for two seconds....")
+		time.Sleep(2 * time.Second)
+		continue
+	}
 }

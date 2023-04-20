@@ -1,6 +1,10 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"strings"
+
+	"github.com/spf13/viper"
+)
 
 // Config contains server configuration
 type Config struct {
@@ -9,13 +13,11 @@ type Config struct {
 }
 
 type DbConfig struct {
-	Address string `mapstructure:"address"`
+	Host string `mapstructure:"host"`
 }
 
 type ServerConfig struct {
-	HttpServerPort        int `mapstructure:"HttpServerPort"`
-	GrpcServerPort        int `mapstructure:"GrpcServerPort"`
-	GrpcGatewayServerPort int `mapstructure:"GrpcGatewayServerPort"`
+	GatewayAddr int `mapstructure:"GatewayAddr"`
 }
 
 // ReadConfig reads config values from json config file
@@ -23,9 +25,18 @@ func Read() (Config, error) {
 	vp := viper.New()
 	config := Config{}
 
+	//Read env variables and override values from config file
+	vp.AutomaticEnv()
+	vp.SetEnvPrefix("ADDRESSBOOK")
+	vp.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	vp.SetConfigName("config")
 	vp.SetConfigType("json")
-	vp.AddConfigPath("./config")
+
+	//Local
+	vp.AddConfigPath("config")
+	// In docker
+	vp.AddConfigPath("/usr/local/bin/")
 
 	err := vp.ReadInConfig()
 	if err != nil {
@@ -33,6 +44,9 @@ func Read() (Config, error) {
 	}
 
 	err = vp.Unmarshal(&config)
+	if err != nil {
+		return Config{}, err
+	}
 
 	return config, nil
 }
