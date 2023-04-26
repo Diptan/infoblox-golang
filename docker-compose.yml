@@ -1,0 +1,31 @@
+version: "3.7"
+services:
+
+  addressbook:
+    build:
+      context: .
+      args:
+        package: addressbook
+    image: infoblox-golang/addressbook:latest
+    depends_on:
+      - postgres
+    environment:
+      ADDRESSBOOK_DB_HOST: "host=postgres port=5432 user=postgres password=postgrespw dbname=address-book sslmode=disable timezone=UTC connect_timeout=5"
+    ports:
+      - "6070:8080"
+
+  postgres:
+    image: 'postgres:latest'
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+      POSTGRES_DB: address-book
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data 777

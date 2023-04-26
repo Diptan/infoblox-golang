@@ -3,22 +3,18 @@ package addressbook
 import (
 	"fmt"
 	"infoblox-golang/internal/platform/storage"
-)
 
-type Store interface {
-	Find(m storage.Matcher) ([]interface{}, error)
-	Insert(r interface{}) error
-	Update(r interface{}) error
-	Remove(id storage.ID) error
-}
+	"gorm.io/gorm"
+)
 
 // Repository is a type that manipulates user data
 type Repository struct {
-	db Store
+	db *gorm.DB
 }
 
 // User is a type that represents user model
 type User struct {
+	gorm.Model
 	ID       storage.ID `json:"id"`
 	Username string     `json:"username"`
 	Address  string     `json:"address"`
@@ -26,7 +22,7 @@ type User struct {
 }
 
 // NewRepository creates anew instance of Repository
-func NewRepository(db Store) Repository {
+func NewRepository(db *gorm.DB) Repository {
 	return Repository{
 		db: db,
 	}
@@ -35,9 +31,8 @@ func NewRepository(db Store) Repository {
 // Create creates a new user entity
 func (r Repository) Create(u User) (User, error) {
 	u.ID = storage.NewID()
-
-	if err := r.db.Insert(u); err != nil {
-		return u, fmt.Errorf("save user: %w", err)
+	if res := r.db.Create(&u); res.Error != nil {
+		return u, fmt.Errorf("save user: %w", res.Error)
 	}
 
 	return u, nil
@@ -45,8 +40,8 @@ func (r Repository) Create(u User) (User, error) {
 
 // Remove removes an existing user entity by id
 func (r Repository) Delete(id string) error {
-	if err := r.db.Remove(storage.ID(id)); err != nil {
-		return fmt.Errorf("delete user: %w", err)
+	if res := r.db.Where("id = ?", id).Delete(&User{}); res.Error != nil {
+		return fmt.Errorf("delete user: %w", res.Error)
 	}
 
 	return nil
@@ -55,9 +50,8 @@ func (r Repository) Delete(id string) error {
 // Update updates an existing user entity
 func (r Repository) Update(id string, u User) (User, error) {
 	u.ID = storage.ID(id)
-	err := r.db.Update(u)
-	if err != nil {
-		return User{}, fmt.Errorf("update user: %w", err)
+	if r.db.Model(&u).Where("id = ?", id).Updates(&u).RowsAffected == 0 {
+		r.db.Create(&u) // create new record from u
 	}
 
 	return u, nil
@@ -65,44 +59,29 @@ func (r Repository) Update(id string, u User) (User, error) {
 
 // Get returns a user entity for the specified ID
 func (r Repository) GetById(id string) (User, error) {
-	res, err := r.db.Find(func(value interface{}) bool {
-		if c, ok := value.(User); ok {
-			return string(c.ID) == id
-		}
-
-		return false
-	})
-
-	if err != nil {
-		return User{}, fmt.Errorf("get user: %w", err)
+	var user User
+	res := r.db.First(&user, id)
+	if res.Error != nil {
+		return User{}, fmt.Errorf("get user: %w", res.Error)
 	}
 
-	if len(res) == 0 {
+	if res.RowsAffected == 0 {
 		return User{}, storage.ErrNotFound
 	}
 
-	return res[0].(User), nil
+	return user, nil
 }
 
 // GetAll returns all user entities
 func (r Repository) GetAll() ([]User, error) {
-	res, err := r.db.Find(func(value interface{}) bool {
-		_, ok := value.(User)
-		return ok
-	})
-
-	if err != nil {
-		return []User{}, fmt.Errorf("get all users: %w", err)
+	var users []User
+	res := r.db.Find(&users)
+	if res.Error != nil {
+		return nil, fmt.Errorf("get all users: %w", res.Error)
 	}
 
-	if len(res) == 0 {
+	if res.RowsAffected == 0 {
 		return []User{}, storage.ErrNotFound
-	}
-
-	users := make([]User, len(res))
-
-	for i, withID := range res {
-		users[i] = withID.(User)
 	}
 
 	return users, nil
