@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: addressbook
+spec:
+  selector:
+    matchLabels:
+      app: addressbook
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: addressbook
+    spec:
+      containers:
+      - name: addressbook
+        image: mykhailodyptan/addressbook-service:1.0.0
+        env:
+        - name: ADDRESSBOOK_DB_HOST
+          value: postgres://postgres:postgrespw@postgres:5432/address-book
+        ports:
+        - name: http
+          containerPort: 8080
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: addressbook
+spec:
+  selector:
+    app: addressbook
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 8080
+      targetPort: 8080
